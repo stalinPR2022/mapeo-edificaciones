@@ -46,10 +46,14 @@
                 @if(auth()->user()->rol === 'inspector')
                     <div class="alert alert-info">
                         Panel de inspector.
-
-                        Próximamente: registro de edificaciones
-                        y actualización de inspecciones.
+                        Desde aquí puede registrar nuevas edificaciones
                     </div>
+                    <a
+                        href="{{ route('edificaciones.create') }}"
+                        class="btn btn-primary"
+                    >
+                    Registrar edificación
+                    </a>
                 @elseif(auth()->user()->rol === 'supervisor')
                     <div class="alert alert-info">
                         Panel de supervisor.

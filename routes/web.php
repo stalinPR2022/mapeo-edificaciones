@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\EdificacionController;
 
 Route::get('/', function () {
     return redirect()->route(
@@ -27,4 +28,18 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/logout', [AuthController::class, 'cerrarSesion'])
         ->name('logout');
+    
+    // Registro de edificaciones
+    Route::get(
+        '/edificaciones/crear',
+        [EdificacionController::class, 'create']
+    )->name('edificaciones.create');
+
+    Route::post(
+        '/edificaciones',
+        [EdificacionController::class, 'store']
+    )->name('edificaciones.store');
+
+    // fin Registro de edificaciones
 });
+
