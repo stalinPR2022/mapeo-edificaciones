@@ -77,4 +77,58 @@ class EdificacionController extends Controller
 
         return view('edificaciones.index', compact('edificaciones'));
     }
+
+    //Actualizar estado
+    public function actualizarEstado(
+        Request $request,
+        int $edificacion
+    ): RedirectResponse {
+
+    // Solo los inspectores pueden modificar inspecciones.
+    abort_unless(
+        Auth::user()?->rol === 'inspector',
+        403,
+        'No tienes permiso para actualizar inspecciones.'
+    );
+
+    // Validar los datos enviados.
+    $datos = $request->validate([
+        'estado_inspeccion' => [
+            'required',
+            'string',
+            'in:Pendiente,En proceso,Completada'
+        ],
+        'observacion' => [
+            'nullable',
+            'string'
+        ],
+    ]);
+
+    // Buscar la edificación en PostgreSQL.
+    $registro = Edificacion::findOrFail($edificacion);
+
+    // Actualizar fecha únicamente si cambió el estado.
+    if (
+        $registro->estado_inspeccion !==
+        $datos['estado_inspeccion']
+    ) {
+        $registro->fecha_actualizacion_estado = now();
+    }
+
+    // Guardar el estado y la observación.
+    $registro->estado_inspeccion = $datos['estado_inspeccion'];
+
+    $registro->observacion = $datos['observacion'] ?? null;
+
+    $registro->save();
+
+    return redirect()
+        ->route('edificaciones.index', [
+            'seleccionada' => $registro->id_edificacion
+        ])
+        ->with(
+            'success',
+            'Estado de inspección actualizado correctamente.'
+        );
+    }
 }

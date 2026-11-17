@@ -48,5 +48,12 @@ Route::middleware('auth')->group(function () {
         [EdificacionController::class, 'index']
     )->name('edificaciones.index');
 
+    //Ruta para la actualización
+    Route::patch(
+        '/edificaciones/{edificacion}/estado',
+        [EdificacionController::class, 'actualizarEstado']
+    )->name('edificaciones.estado.update');
+
+
 });
 

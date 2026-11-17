@@ -73,6 +73,23 @@
                     align-items-center mb-3">
 
             <h3>Consultar edificaciones</h3>
+            @if(session('success'))
+                <div class="alert alert-success">
+                    {{ session('success') }}
+                </div>
+            @endif
+
+            @if($errors->any())
+                <div class="alert alert-danger">
+                    <strong>No se pudieron guardar los cambios.</strong>
+
+                    <ul class="mb-0">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
 
             <a
                 href="{{ route('inicio') }}"
@@ -81,6 +98,8 @@
                 Volver al inicio
             </a>
         </div>
+
+        
 
         <!-- Lista de edificaciones -->
         <div class="card shadow-sm mb-4">
@@ -225,6 +244,73 @@
                         <span id="detalle-actualizacion"></span>
                     </p>
 
+
+                    @if(Auth::user()->rol === 'inspector')
+
+                        <hr>
+
+                        <h5>Actualizar inspección</h5>
+
+                        <form
+                            id="form-estado"
+                            method="POST"
+                            action=""
+                        >
+                            @csrf
+                            @method('PATCH')
+
+                            <div class="mb-3">
+                                <label for="estado_inspeccion" class="form-label">
+                                    Estado de inspección
+                                </label>
+
+                                <select
+                                    id="estado_inspeccion"
+                                    name="estado_inspeccion"
+                                    class="form-select"
+                                    required
+                                >
+                                    <option value="Pendiente">
+                                        Pendiente
+                                    </option>
+
+                                    <option value="En proceso">
+                                        En proceso
+                                    </option>
+
+                                    <option value="Completada">
+                                        Completada
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="observacion" class="form-label">
+                                    Observación (opcional)
+                                </label>
+
+                                <textarea
+                                    id="observacion"
+                                    name="observacion"
+                                    class="form-control"
+                                    rows="3"
+                                    placeholder="Ingrese una observación..."
+                                ></textarea>
+                            </div>
+
+                            <div class="d-flex justify-content-end">
+                                <button
+                                    type="submit"
+                                    class="btn btn-primary"
+                                >
+                                    Guardar cambios
+                                </button>
+                            </div>
+                        </form>
+
+                    @endif
+                    
+
                 </div>
             </div>
         </div>
@@ -241,6 +327,14 @@
     <script>
         // Datos de edificaciones enviados desde Laravel.
         const edificaciones = {{ Illuminate\Support\Js::from($edificaciones) }};
+
+        //incremento 3
+        const esInspector = {{ Illuminate\Support\Js::from(Auth::user()->rol === 'inspector') }};
+
+        const rutaActualizacion = {{ Illuminate\Support\Js::from(
+            route('edificaciones.estado.update', ['edificacion' => '__ID__'])
+        ) }};
+
 
         // Crear mapa.
         const mapa = L.map('mapa').setView(
@@ -288,6 +382,24 @@
 
             document.getElementById('detalle')
                 .classList.remove('d-none');
+
+            //Nuevo incremento 3
+
+            if (esInspector) {
+                const formulario = document.getElementById('form-estado');
+
+                formulario.action = rutaActualizacion.replace(
+                    '__ID__',
+                    encodeURIComponent(edificacion.id_edificacion)
+                );
+
+                document.getElementById('estado_inspeccion').value =
+                    edificacion.estado_inspeccion;
+
+                document.getElementById('observacion').value =
+                    edificacion.observacion ?? '';
+            }
+
         }
 
         function seleccionarEdificacion(id) {
@@ -376,7 +488,18 @@
                 seleccionarEdificacion(this.dataset.id);
             });
         });
+        
+        // Recuperar la edificación seleccionada después de guardar.
+        const parametros = new URLSearchParams(window.location.search);
+
+        const idSeleccionado = parametros.get('seleccionada');
+
+        if (idSeleccionado) {
+            seleccionarEdificacion(idSeleccionado);
+        }
     </script>
+
+
 
 </body>
 </html>
