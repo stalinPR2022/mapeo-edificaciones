@@ -55,4 +55,26 @@ class EdificacionController extends Controller
             ->route('edificaciones.create')
             ->with('success', 'Edificación registrada correctamente.');
     }
+    //index
+    public function index(): View
+    {
+        $edificaciones = Edificacion::query()
+            ->select([
+                'id_edificacion',
+                'nombre',
+                'tipo',
+                'direccion',
+                'descripcion',
+                'latitud',
+                'longitud',
+                'estado_inspeccion',
+                'observacion',
+                'fecha_registro',
+                'fecha_actualizacion_estado',
+            ])
+            ->orderBy('id_edificacion', 'desc')
+            ->get();
+
+        return view('edificaciones.index', compact('edificaciones'));
+    }
 }

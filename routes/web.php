@@ -41,5 +41,12 @@ Route::middleware('auth')->group(function () {
     )->name('edificaciones.store');
 
     // fin Registro de edificaciones
+
+    //Obtener edificaciones
+    Route::get(
+        '/edificaciones',
+        [EdificacionController::class, 'index']
+    )->name('edificaciones.index');
+
 });
 

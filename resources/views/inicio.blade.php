@@ -54,6 +54,12 @@
                     >
                     Registrar edificación
                     </a>
+                    <a
+                        href="{{ route('edificaciones.index') }}"
+                        class="btn btn-outline-primary"
+                    >
+                        Consultar edificaciones
+                    </a>
                 @elseif(auth()->user()->rol === 'supervisor')
                     <div class="alert alert-info">
                         Panel de supervisor.
