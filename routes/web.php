@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\EdificacionController;
+use App\Http\Controllers\SupervisionController;
 
 Route::get('/', function () {
     return redirect()->route(
@@ -53,6 +54,17 @@ Route::middleware('auth')->group(function () {
         '/edificaciones/{edificacion}/estado',
         [EdificacionController::class, 'actualizarEstado']
     )->name('edificaciones.estado.update');
+
+    //Para la pantalla de supervision
+    Route::get(
+        '/supervision',
+        [SupervisionController::class, 'index']
+    )->name('supervision.index');
+
+    Route::get(
+        '/supervision/datos',
+        [SupervisionController::class, 'datos']
+    )->name('supervision.datos');
 
 
 });

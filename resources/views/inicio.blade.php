@@ -64,8 +64,20 @@
                     <div class="alert alert-info">
                         Panel de supervisor.
 
-                        Próximamente: mapa de supervisión
-                        con actualización automática cada 5 segundos.
+                        
+                        <div class="alert alert-info">
+                            Panel de supervisor.
+                            Desde aquí puede consultar el mapa de edificaciones
+                            y visualizar los estados de inspección actualizados.
+                        </div>
+
+                        <a
+                            href="{{ route('supervision.index') }}"
+                            class="btn btn-primary"
+                        >
+                            Abrir vista de supervisión
+                        </a>
+
                     </div>
                 @endif
 
