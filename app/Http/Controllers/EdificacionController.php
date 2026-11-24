@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use App\Events\EdificacionActualizada;
 
 class EdificacionController extends Controller
 {
@@ -45,11 +46,17 @@ class EdificacionController extends Controller
         ]);
 
         // Los campos de estado y usuario no se reciben del formulario.
-        Edificacion::create([
+        $edificacion = Edificacion::create([
             ...$datos,
             'id_usuario' => Auth::id(),
             'estado_inspeccion' => 'Pendiente',
         ]);
+
+        // Notificar el registro después de guardar en PostgreSQL.
+        EdificacionActualizada::dispatch(
+            $edificacion->id_edificacion,
+            'registrada'
+        );
 
         return redirect()
             ->route('edificaciones.create')
@@ -78,57 +85,75 @@ class EdificacionController extends Controller
         return view('edificaciones.index', compact('edificaciones'));
     }
 
-    //Actualizar estado
+    //Actualizar estado 2.0
     public function actualizarEstado(
         Request $request,
         int $edificacion
     ): RedirectResponse {
 
-    // Solo los inspectores pueden modificar inspecciones.
-    abort_unless(
-        Auth::user()?->rol === 'inspector',
-        403,
-        'No tienes permiso para actualizar inspecciones.'
-    );
-
-    // Validar los datos enviados.
-    $datos = $request->validate([
-        'estado_inspeccion' => [
-            'required',
-            'string',
-            'in:Pendiente,En proceso,Completada'
-        ],
-        'observacion' => [
-            'nullable',
-            'string'
-        ],
-    ]);
-
-    // Buscar la edificación en PostgreSQL.
-    $registro = Edificacion::findOrFail($edificacion);
-
-    // Actualizar fecha únicamente si cambió el estado.
-    if (
-        $registro->estado_inspeccion !==
-        $datos['estado_inspeccion']
-    ) {
-        $registro->fecha_actualizacion_estado = now();
-    }
-
-    // Guardar el estado y la observación.
-    $registro->estado_inspeccion = $datos['estado_inspeccion'];
-
-    $registro->observacion = $datos['observacion'] ?? null;
-
-    $registro->save();
-
-    return redirect()
-        ->route('edificaciones.index', [
-            'seleccionada' => $registro->id_edificacion
-        ])
-        ->with(
-            'success',
-            'Estado de inspección actualizado correctamente.'
+        // Solo los inspectores pueden modificar inspecciones.
+        abort_unless(
+            Auth::user()?->rol === 'inspector',
+            403,
+            'No tienes permiso para actualizar inspecciones.'
         );
+
+        // Validar los datos enviados.
+        $datos = $request->validate([
+            'estado_inspeccion' => [
+                'required',
+                'string',
+                'in:Pendiente,En proceso,Completada'
+            ],
+            'observacion' => [
+                'nullable',
+                'string'
+            ],
+        ]);
+
+        // Buscar la edificación en PostgreSQL.
+        $registro = Edificacion::findOrFail($edificacion);
+
+        // Comprobar si cambió el estado de inspección.
+        $cambioEstado = (
+            $registro->estado_inspeccion !==
+            $datos['estado_inspeccion']
+        );
+
+        // Asignar el nuevo estado y la observación.
+        $registro->estado_inspeccion = $datos['estado_inspeccion'];
+        $registro->observacion = $datos['observacion'] ?? null;
+
+        // Actualizar la fecha solamente si cambió el estado.
+        if ($cambioEstado) {
+            $registro->fecha_actualizacion_estado = now();
+        }
+
+        // Comprobar si hubo cambios reales.
+        $hayCambios = $registro->isDirty([
+            'estado_inspeccion',
+            'observacion'
+        ]);
+
+        // Guardar y emitir evento únicamente si hubo cambios.
+        if ($hayCambios) {
+            $registro->save();
+
+            // Notificar mediante Laravel Reverb.
+            EdificacionActualizada::dispatch(
+                $registro->id_edificacion,
+                'estado_actualizado'
+            );
+        }
+
+        return redirect()
+            ->route('edificaciones.index', [
+                'seleccionada' => $registro->id_edificacion
+            ])
+            ->with(
+                'success',
+                'Estado de inspección actualizado correctamente.'
+            );
     }
+
 }
