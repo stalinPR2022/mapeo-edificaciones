@@ -108,8 +108,7 @@
 
         <!-- Indicador de actualización -->
         <div class="alert alert-info">
-            <strong>Actualización automática:</strong>
-            cada 5 segundos.
+            <strong>Actualización en tiempo real mediante WebSockets</strong>
 
             <div class="small mt-1">
                 Estado:
@@ -284,8 +283,8 @@
         let edificaciones = [];
         let seleccionadaId = null;
         let primeraCarga = true;
-        let temporizador = null;
         let consultando = false;
+        let actualizacionPendiente = false;
 
         const marcadores = new Map();
 
@@ -517,13 +516,13 @@
             }
 
             consultando = true;
-            clearTimeout(temporizador);
+            
             
             try {
-                asignarTexto(
-                    'estado-conexion',
-                    'Consultando servidor...'
-                );
+               // asignarTexto(
+                    //'estado-conexion',
+                  //  'Consultando servidor...'
+                //);
 
                 const respuesta = await fetch(urlDatos, {
                     method: 'GET',
@@ -572,7 +571,7 @@
                     }
                 }
 
-                asignarTexto('estado-conexion', 'Conectado');
+                //asignarTexto('estado-conexion', 'WebSocket conectado');
 
                 asignarTexto(
                     'ultima-consulta',
@@ -587,36 +586,50 @@
                     error
                 );
 
-                asignarTexto(
-                    'estado-conexion',
-                    'Error de conexión. Se intentará nuevamente.'
-                );
+               // asignarTexto(
+                 //   'estado-conexion',
+                   // 'Error de conexión. Se intentará nuevamente.'
+                //);
             } finally {
-
                 consultando = false;
-                // Programar la siguiente consulta cuando termine
-                // la actual, evitando solicitudes acumuladas.
-                if (!document.hidden) {
-                    temporizador = setTimeout(
-                        actualizarDatos,
-                        5000
-                    );
-                }
-            }
-        }
 
-        // Evitar consultas cuando la pestaña está oculta.
-        document.addEventListener(
-            'visibilitychange',
-            function() {
-                clearTimeout(temporizador);
-
-                if (!document.hidden) {
+                // Si llegó otro evento mientras consultábamos,
+                // procesar una nueva actualización.
+                if (actualizacionPendiente) {
+                    actualizacionPendiente = false;
                     actualizarDatos();
                 }
             }
-        );
+        }
+        //Aqui
+        function solicitarActualizacion() {
 
+            // Si existe una consulta en curso,
+            // dejar marcada una actualización pendiente.
+            if (consultando) {
+                actualizacionPendiente = true;
+                return;
+            }
+
+            // Consultar inmediatamente los datos actualizados.
+            actualizarDatos();
+        }
+
+        //Aqui
+        window.addEventListener('supervision:actualizar', (evento) => {
+
+            console.log(
+                'Actualizando supervisión por evento WebSocket.',
+                evento.detail ?? null
+            );
+
+            solicitarActualizacion();
+        });
+
+
+
+        
+       
         // Primera consulta al abrir la pantalla.
         actualizarDatos();
     </script>
